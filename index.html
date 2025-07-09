@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lunch Tent Productivity Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.18.0/plotly.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+  <style>
+    /* ==========================================================================
+       CSS Custom Properties & Configuration
+       ========================================================================== */
+    :root {
+      /* Color Palette */
+      --primary-orange: #ff6b35;
+      --primary-orange-dark: #e55a2b;
+      --secondary-orange: #f7931e;
+      --accent-blue: #2196f3;
+      --accent-green: #4caf50;
+      --accent-red: #f44336;
+      --accent-yellow: #ff9800;
+      
+      /* Semantic Colors */
+      --status-good: #28a745;
+      --status-warning: #ffc107;
+      --status-danger: #dc3545;
+      
+      /* Neutrals */
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --text-primary: #2d3748;
+      --text-secondary: #4a5568;
+      --text-muted: #718096;
+      --border-light: #e2e8f0;
+      --shadow-light: rgba(0, 0, 0, 0.05);
+      --shadow-medium: rgba(0, 0, 0, 0.1);
+      --shadow-heavy: rgba(0, 0, 0, 0.15);
+      
+      /* Spacing */
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      
+      /* Border Radius */
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      
+      /* Transitions */
+      --transition-fast: 0.15s ease;
+      --transition-medium: 0.3s ease;
+      --transition-slow: 0.5s ease;
+      
+      /* Typography */
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-size-xs: 0.75rem;
+      --font-size-sm: 0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-size-xl: 1.25rem;
+      --font-size-2xl: 1.5rem;
+      --font-size-3xl: 2rem;
+    }
+
+    /* ==========================================================================
+       Base Styles & Reset
+       ========================================================================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ==========================================================================
+       Layout Components
+       ========================================================================== */
+    .dashboard-container {
+      max-width: 1400px;
+      margin: var(--spacing-lg) auto;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 10px 30px var(--shadow-medium);
+      overflow: hidden;
+      animation: slideInUp var(--transition-medium) ease-out;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary-orange) 0%, var(--secondary-orange) 100%);
+      color: white;
+      padding: var(--spacing-2xl);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+      opacity: 0.3;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header h1 {
+      font-size: var(--font-size-3xl);
+      font-weight: 700;
+      margin-bottom: var(--spacing-sm);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: var(--font-size-lg);
+      font-weight: 300;
+    }
+
+    .dashboard-grid {
+      padding: var(--spacing-2xl);
+    }
+
+    /* ==========================================================================
+       KPI Cards
+       ========================================================================== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .kpi-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      box-shadow: 0 4px 20px var(--shadow-light);
+      position: relative;
+      cursor: help;
+      transition: all var(--transition-medium);
+      border: 1px solid var(--border-light);
+      transform: translateY(0);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px var(--shadow-medium);
+      border-color: var(--primary-orange);
+    }
+
+    .kpi-card:focus {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 2px;
+    }
+
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .kpi-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: var(--spacing-md);
+      font-size: var(--font-size-lg);
+      color: white;
+    }
+
+    .kpi-title {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .kpi-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-xs);
+      transition: color var(--transition-fast);
+    }
+
+    .kpi-unit {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .kpi-change {
+      margin-top: var(--spacing-sm);
+      font-size: var(--font-size-xs);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    .kpi-change.positive {
+      color: var(--status-good);
+    }
+
+    .kpi-change.negative {
+      color: var(--status-danger);
+    }
+
+    /* Status Colors */
+    .status-good {
+      color: var(--status-good);
+    }
+
+    .status-warning {
+      color: var(--status-warning);
+    }
+
+    .status-danger {
+      color: var(--status-danger);
+    }
+
+    /* Icon Colors */
+    .icon-work-time {
+      background: linear-gradient(135deg, var(--status-danger), #ff6b6b);
+    }
+
+    .icon-efficiency {
+      background: linear-gradient(135deg, var(--accent-blue), #74b9ff);
+    }
+
+    .icon-utilization {
+      background: linear-gradient(135deg, var(--accent-green), #55efc4);
+    }
+
+    .icon-ingress {
+      background: linear-gradient(135deg, var(--accent-yellow), #fdcb6e);
+    }
+
+    .icon-stability {
+      background: linear-gradient(135deg, #9b59b6, #e84393);
+    }
+
+    .icon-capacity {
+      background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+    }
+
+    /* ==========================================================================
+       Tooltips
+       ========================================================================== */
+    .tooltip {
+      visibility: hidden;
+      width: 280px;
+      background: var(--text-primary);
+      color: white;
+      text-align: left;
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      top: auto;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: all var(--transition-medium);
+      z-index: 1000;
+      font-size: var(--font-size-sm);
+      line-height: 1.5;
+      box-shadow: 0 8px 30px var(--shadow-heavy);
+    }
+
+    .tooltip::before {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -8px;
+        border-width: 8px;
+        border-style: solid;
+        border-color: var(--text-primary) transparent transparent transparent;
+        }
+    .kpi-card:hover .tooltip,
+    .kpi-card:focus .tooltip {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    /* ==========================================================================
+       Charts Section
+       ========================================================================== */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-2xl);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .chart-container {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: 0 4px 20px var(--shadow-light);
+      border: 1px solid var(--border-light);
+      transition: all var(--transition-medium);
+    }
+
+    .chart-container:hover {
+      box-shadow: 0 8px 30px var(--shadow-medium);
+    }
+
+    #heatmap-chart {
+      grid-column: 1 / -1;
+      height: 400px;
+    }
+
+    #occupancy-chart,
+    #entries-exits-chart {
+      height: 300px;
+    }
+
+    /* ==========================================================================
+       Panels Section
+       ========================================================================== */
+    .panel-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-2xl);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .panel {
+      background: var(--bg-secondary);
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 20px var(--shadow-light);
+      border: 1px solid var(--border-light);
+      transition: all var(--transition-medium);
+    }
+
+    .panel:hover {
+      box-shadow: 0 8px 30px var(--shadow-medium);
+    }
+
+    .panel h3 {
+      margin-bottom: var(--spacing-lg);
+      font-size: var(--font-size-xl);
+      color: var(--text-primary);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .panel-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--primary-orange);
+    }
+
+    .panel ul {
+      list-style: none;
+      color: var(--text-secondary);
+    }
+
+    .panel li {
+      padding: var(--spacing-sm) 0;
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      border-bottom: 1px solid var(--border-light);
+      transition: all var(--transition-fast);
+    }
+
+    .panel li:last-child {
+      border-bottom: none;
+    }
+
+    .panel li:hover {
+      background: var(--bg-primary);
+      margin: 0 calc(-1 * var(--spacing-md));
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--radius-sm);
+    }
+
+    .insight-icon {
+      color: var(--primary-orange);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .severity-high {
+      color: var(--status-danger);
+    }
+
+    .severity-medium {
+      color: var(--status-warning);
+    }
+
+    .severity-low {
+      color: var(--status-good);
+    }
+
+    /* ==========================================================================
+       Controls Section
+       ========================================================================== */
+    .controls-container {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-2xl);
+      box-shadow: 0 4px 20px var(--shadow-light);
+      border: 1px solid var(--border-light);
+      display: flex;
+      gap: var(--spacing-lg);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .control-group label {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .control-group select,
+    .control-group input {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .control-group select:focus,
+    .control-group input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+
+    .refresh-btn {
+      background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+      color: white;
+      border: none;
+      padding: var(--spacing-sm) var(--spacing-lg);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .refresh-btn:hover {
+      background: linear-gradient(135deg, var(--primary-orange-dark), var(--primary-orange));
+      transform: translateY(-1px);
+    }
+
+    .refresh-btn:active {
+      transform: translateY(0);
+    }
+
+    /* ==========================================================================
+       Responsive Design
+       ========================================================================== */
+    @media (max-width: 1200px) {
+      .dashboard-container {
+        margin: var(--spacing-md);
+      }
+      
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .panel-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .dashboard-grid {
+        padding: var(--spacing-lg);
+      }
+      
+      .header {
+        padding: var(--spacing-lg);
+      }
+      
+      .header h1 {
+        font-size: var(--font-size-2xl);
+      }
+      
+      .controls-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .control-group {
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .kpi-value {
+        font-size: 2rem;
+      }
+      
+      .tooltip {
+        width: 250px;
+      }
+    }
+
+    /* ==========================================================================
+       Accessibility Enhancements
+       ========================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Focus indicators */
+    .kpi-card:focus-visible {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       Loading States
+       ========================================================================== */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border-light);
+      border-top: 4px solid var(--primary-orange);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: var(--spacing-md);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <header class="header" role="banner">
+      <div class="header-content">
+        <h1> Lunch Tent Productivity Dashboard</h1>
+        <p>Real-time monitoring of break periods and work productivity impact</p>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <!-- Controls Section -->
+      <section class="controls-container" role="region" aria-labelledby="controls-heading">
+        <h2 id="controls-heading" class="sr-only">Dashboard Controls</h2>
+        <div class="control-group">
+          <label for="tent-filter">Filter by Tent:</label>
+          <select id="tent-filter" aria-label="Filter data by tent">
+            <option value="all">All Tents</option>
+            <option value="A">Tent A</option>
+            <option value="B">Tent B</option>
+            <option value="C">Tent C</option>
+            <option value="D">Tent D</option>
+            <option value="E">Tent E</option>
+            <option value="F">Tent F</option>
+          </select>
+        </div>
+        
+        <div class="control-group">
+          <label for="date-range">Date Range:</label>
+          <input type="date" id="date-range" aria-label="Select date range">
+        </div>
+        
+        <button class="refresh-btn" id="refresh-data" aria-label="Refresh dashboard data">
+          <i class="fas fa-sync-alt" aria-hidden="true"></i>
+          Refresh
+        </button>
+      </section>
+
+      <!-- KPI Cards -->
+      <section class="kpi-grid" role="region" aria-labelledby="kpi-heading">
+        <h2 id="kpi-heading" class="sr-only">Key Performance Indicators</h2>
+        
+        <div class="kpi-card" tabindex="0" role="button" aria-describedby="work-time-tooltip">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-work-time">
+              <i class="fas fa-clock" aria-hidden="true"></i>
+            </div>
+            <div class="kpi-title">Work-Time Lost</div>
+          </div>
+          <div class="kpi-value" id="work-time-lost" aria-live="polite">--</div>
+          <div class="kpi-unit">man-minutes</div>
+          <div class="kpi-change" id="work-time-change">
+            <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            <span>vs. yesterday</span>
+          </div>
+          <div class="tooltip" id="work-time-tooltip" role="tooltip">
+            <strong>Work-Time Lost Calculation:</strong><br>
+            (Average Break Duration - Target 30 min) × Total Workers<br>
+            <em>Target: 30 min lunch, 15 min tea break</em>
+          </div>
+        </div>
+
+        <div class="kpi-card" tabindex="0" role="button" aria-describedby="efficiency-tooltip">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-efficiency">
+              <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+            </div>
+            <div class="kpi-title">Break Efficiency</div>
+          </div>
+          <div class="kpi-value" id="break-efficiency" aria-live="polite">--</div>
+          <div class="kpi-unit">%</div>
+          <div class="kpi-change" id="efficiency-change">
+            <i class="fas fa-arrow-down" aria-hidden="true"></i>
+            <span>vs. yesterday</span>
+          </div>
+          <div class="tooltip" id="efficiency-tooltip" role="tooltip">
+            <strong>Break Efficiency:</strong><br>
+            Target Break Time ÷ Average Break Duration × 100<br>
+            <em>Higher is better - indicates timely returns</em>
+          </div>
+        </div>
+
+        <div class="kpi-card" tabindex="0" role="button" aria-describedby="utilization-tooltip">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-utilization">
+              <i class="fas fa-users" aria-hidden="true"></i>
+            </div>
+            <div class="kpi-title">Peak Utilization</div>
+          </div>
+          <div class="kpi-value" id="peak-util" aria-live="polite">--</div>
+          <div class="kpi-unit">%</div>
+          <div class="kpi-change" id="utilization-change">
+            <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            <span>vs. yesterday</span>
+          </div>
+          <div class="tooltip" id="utilization-tooltip" role="tooltip">
+            <strong>Peak Utilization:</strong><br>
+            Maximum Occupancy ÷ Tent Capacity × 100<br>
+            <em>Capacity: 300 seats per tent</em>
+          </div>
+        </div>
+
+        <div class="kpi-card" tabindex="0" role="button" aria-describedby="ingress-tooltip">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-ingress">
+              <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+            </div>
+            <div class="kpi-title">Avg Arrival Rate</div>
+          </div>
+          <div class="kpi-value" id="avg-ingress" aria-live="polite">--</div>
+          <div class="kpi-unit">workers/min</div>
+          <div class="kpi-change" id="ingress-change">
+            <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            <span>vs. yesterday</span>
+          </div>
+          <div class="tooltip" id="ingress-tooltip" role="tooltip">
+            <strong>Average Arrival Rate:</strong><br>
+            Mean worker arrivals per minute during break periods<br>
+            <em>Higher rates may indicate scheduling issues</em>
+          </div>
+        </div>
+
+        <div class="kpi-card" tabindex="0" role="button" aria-describedby="stability-tooltip">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-stability">
+              <i class="fas fa-chart-line" aria-hidden="true"></i>
+            </div>
+            <div class="kpi-title">Flow Stability</div>
+          </div>
+          <div class="kpi-value" id="flow-stability" aria-live="polite">--</div>
+          <div class="kpi-unit">CV</div>
+          <div class="kpi-change" id="stability-change">
+            <i class="fas fa-arrow-down" aria-hidden="true"></i>
+            <span>vs. yesterday</span>
+          </div>
+          <div class="tooltip" id="stability-tooltip" role="tooltip">
+            <strong>Flow Stability Index:</strong><br>
+            Standard Deviation ÷ Mean (Coefficient of Variation)<br>
+            <em>Lower values indicate more predictable flow</em>
+          </div>
+        </div>
+
+        <div class="kpi-card" tabindex="0" role="button" aria-describedby="capacity-tooltip">
+          <div class="kpi-header">
+            <div class="kpi-icon icon-capacity">
+              <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+            </div>
+            <div class="kpi-title">Capacity Events</div>
+          </div>
+          <div class="kpi-value" id="capacity-hits" aria-live="polite">--</div>
+          <div class="kpi-unit">incidents</div>
+          <div class="kpi-change" id="capacity-change">
+            <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            <span>vs. yesterday</span>
+          </div>
+          <div class="tooltip" id="capacity-tooltip" role="tooltip">
+            <strong>Capacity-Hit Events:</strong><br>
+            Times when tent reached 100% capacity (300 seats)<br>
+            <em>Indicates potential queuing and worker delays</em>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="charts-grid" role="region" aria-labelledby="charts-heading">
+        <h2 id="charts-heading" class="sr-only">Data Visualizations</h2>
+        
+        <div class="chart-container">
+          <div id="occupancy-chart" aria-label="Occupancy levels over time for all tents"></div>
+        </div>
+        
+        <div class="chart-container">
+          <div id="entries-exits-chart" aria-label="Entry and exit counts by tent"></div>
+        </div>
+        
+        <div class="chart-container">
+          <div id="heatmap-chart" aria-label="Hourly occupancy heatmap showing patterns across tents"></div>
+        </div>
+      </section>
+
+      <!-- Insights and Recommendations -->
+      <section class="panel-container" role="region" aria-labelledby="insights-heading">
+        <h2 id="insights-heading" class="sr-only">Insights and Recommendations</h2>
+        
+        <div class="panel" id="observations-panel">
+          <h3>
+            <i class="fas fa-eye panel-icon" aria-hidden="true"></i>
+            Key Observations
+          </h3>
+          <ul id="observations-list" role="list"></ul>
+        </div>
+        
+        <div class="panel" id="recommendations-panel">
+          <h3>
+            <i class="fas fa-lightbulb panel-icon" aria-hidden="true"></i>
+            Recommendations
+          </h3>
+          <ul id="recommendations-list" role="list"></ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // ==========================================================================
+    // Configuration Constants
+    // ==========================================================================
+    const CONFIG = {
+      LUNCH_BREAK_TIME: 30,    // minutes
+      TEA_BREAK_TIME: 15,      // minutes
+      TENT_CAPACITY: 300,      // seats per tent
+      TOTAL_WORKERS: 1800,     // Total workers across all tents
+      REFRESH_INTERVAL: 30000, // ms
+      TENTS: ['A', 'B', 'C', 'D', 'E', 'F'],
+      BREAK_TIMES: {
+        LUNCH: { start: 13, end: 14 },    // 13:00-14:00
+        TEA: { start: 16, end: 16.5 }     // 16:00-16:30
+      },
+      CHART_COLORS: {
+        primary: '#ff6b35',
+        secondary: '#f7931e',
+        accent: '#2196f3',
+        success: '#4caf50',
+        warning: '#ff9800',
+        danger: '#f44336'
+      },
+      SEVERITY_THRESHOLDS: {
+        HIGH: { workTimeLost: 200, peakUtil: 95, flowCV: 0.6 },
+        MEDIUM: { workTimeLost: 100, peakUtil: 85, flowCV: 0.4 },
+        LOW: { workTimeLost: 0, peakUtil: 0, flowCV: 0 }
+      }
+    };
+
+    // ==========================================================================
+    // Helper: Mock Occupancy Data Generator (simulate real industrial patterns)
+    // ==========================================================================
+    function generateOccupancyData(date = new Date(), tent = "all") {
+      // Generates occupancy count per minute from 11:00 to 18:00 for each tent
+      const hours = [];
+      for (let h = 11; h <= 18; h++) {
+        for (let m = 0; m < 60; m++) {
+          hours.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        }
+      }
+      const data = {};
+      for (const tentName of CONFIG.TENTS) {
+        let baseline = 60 + Math.floor(Math.random() * 20);
+        let pattern = hours.map((time, idx) => {
+          let h = parseInt(time.split(":")[0]);
+          // Simulate lunch/tea peaks:
+          let occ = baseline + Math.floor(Math.random() * 10);
+          // Lunch peak
+          if (h === CONFIG.BREAK_TIMES.LUNCH.start || h === CONFIG.BREAK_TIMES.LUNCH.end-1) {
+            occ += 150 + Math.round(100*Math.sin(idx/10));
+          }
+          // Tea peak
+          if (h === Math.floor(CONFIG.BREAK_TIMES.TEA.start)) {
+            occ += 60 + Math.round(40*Math.cos(idx/7));
+          }
+          // Capacity limits
+          occ = Math.min(occ, CONFIG.TENT_CAPACITY);
+          // Baseline drop in late hours
+          if (h >= 17) occ = Math.max(occ - 30, 20 + Math.floor(Math.random() * 10));
+          return occ;
+        });
+        data[tentName] = pattern;
+      }
+      // For simplicity, filter tent if needed
+      if (tent && tent !== "all") {
+        return {[tent]: data[tent]};
+      }
+      return data;
+    }
+
+    // ==========================================================================
+    // KPI Calculations from Occupancy Data
+    // ==========================================================================
+    function calculateKPIs(data) {
+      // Get all occupancy arrays
+      const tentData = Object.values(data);
+      // 1. Work-Time Lost: sum over-break time above target * number of workers
+      let breakDurations = [];
+      let peakUtilArr = [];
+      let ingressRates = [];
+      let flowCVs = [];
+      let capacityEvents = 0;
+
+      Object.entries(data).forEach(([tent, occArr]) => {
+        // Find max occupancy (peak), mean, std for lunch
+        let lunchStartIdx = (CONFIG.BREAK_TIMES.LUNCH.start-11)*60;
+        let lunchEndIdx = (CONFIG.BREAK_TIMES.LUNCH.end-11)*60;
+        let lunchSlice = occArr.slice(lunchStartIdx, lunchEndIdx);
+
+        // Break duration: number of minutes above 10% capacity
+        let breakMinutes = lunchSlice.filter(x => x > CONFIG.TENT_CAPACITY*0.1).length;
+        breakDurations.push(breakMinutes);
+
+        // Peak Utilization
+        let peak = Math.max(...lunchSlice);
+        peakUtilArr.push((peak / CONFIG.TENT_CAPACITY) * 100);
+
+        // Ingress Rate: measure as change in occupancy per minute (smoothed)
+        let ingress = lunchSlice.map((v,i,arr) => i===0?0:v-arr[i-1]);
+        let avgIngress = ingress.filter(x=>x>0).reduce((a,b)=>a+b,0)/lunchSlice.length;
+        ingressRates.push(avgIngress);
+
+        // Flow Stability: Coefficient of Variation (CV)
+        let mean = lunchSlice.reduce((a,b)=>a+b,0)/lunchSlice.length;
+        let std = Math.sqrt(lunchSlice.reduce((a,b)=>a+(b-mean)**2,0)/lunchSlice.length);
+        flowCVs.push(std/mean);
+
+        // Capacity-hit: times in lunch slot when at/above capacity
+        capacityEvents += lunchSlice.filter(x=>x >= CONFIG.TENT_CAPACITY).length;
+      });
+
+      // Aggregates
+      let avgBreak = breakDurations.reduce((a,b)=>a+b,0)/breakDurations.length;
+      let workTimeLost = Math.max(0, avgBreak-CONFIG.LUNCH_BREAK_TIME)*CONFIG.TOTAL_WORKERS;
+      let breakEfficiency = (CONFIG.LUNCH_BREAK_TIME / avgBreak)*100;
+      let peakUtil = Math.max(...peakUtilArr);
+      let avgIngress = ingressRates.reduce((a,b)=>a+b,0)/ingressRates.length;
+      let flowStability = flowCVs.reduce((a,b)=>a+b,0)/flowCVs.length;
+
+      return {
+        workTimeLost: Math.round(workTimeLost),
+        breakEfficiency: breakEfficiency.toFixed(1),
+        peakUtil: peakUtil.toFixed(1),
+        avgIngress: avgIngress.toFixed(2),
+        flowStability: flowStability.toFixed(2),
+        capacityEvents: capacityEvents
+      };
+    }
+
+    // ==========================================================================
+    // Update UI with KPI values
+    // ==========================================================================
+    function setKPI(kpis, prevKPIs) {
+      document.getElementById("work-time-lost").textContent = kpis.workTimeLost;
+      document.getElementById("break-efficiency").textContent = kpis.breakEfficiency;
+      document.getElementById("peak-util").textContent = kpis.peakUtil;
+      document.getElementById("avg-ingress").textContent = kpis.avgIngress;
+      document.getElementById("flow-stability").textContent = kpis.flowStability;
+      document.getElementById("capacity-hits").textContent = kpis.capacityEvents;
+
+      // Show arrow and color for changes vs prev (simple up/down)
+      function setChange(id, curr, prev) {
+        const el = document.getElementById(id);
+        if (!prev) return;
+        if (curr > prev) {
+          el.innerHTML = `<i class="fas fa-arrow-up" aria-hidden="true"></i> <span>vs. yesterday</span>`;
+          el.className = "kpi-change positive";
+        } else if (curr < prev) {
+          el.innerHTML = `<i class="fas fa-arrow-down" aria-hidden="true"></i> <span>vs. yesterday</span>`;
+          el.className = "kpi-change negative";
+        } else {
+          el.innerHTML = `<i class="fas fa-minus" aria-hidden="true"></i> <span>No change</span>`;
+          el.className = "kpi-change";
+        }
+      }
+      setChange("work-time-change", kpis.workTimeLost, prevKPIs?.workTimeLost);
+      setChange("efficiency-change", kpis.breakEfficiency, prevKPIs?.breakEfficiency);
+      setChange("utilization-change", kpis.peakUtil, prevKPIs?.peakUtil);
+      setChange("ingress-change", kpis.avgIngress, prevKPIs?.avgIngress);
+      setChange("stability-change", kpis.flowStability, prevKPIs?.flowStability);
+      setChange("capacity-change", kpis.capacityEvents, prevKPIs?.capacityEvents);
+    }
+
+    // ==========================================================================
+    // Plotly Charts
+    // ==========================================================================
+    function drawCharts(data) {
+      // Occupancy over time
+      const x = [];
+      for (let h = 11; h <= 18; h++) {
+        for (let m = 0; m < 60; m+=5) {
+          x.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        }
+      }
+      let traces = [];
+      for (const tent of CONFIG.TENTS) {
+        let arr = data[tent];
+        if (!arr) continue;
+        let downsample = arr.filter((v,i)=>i%5===0);
+        traces.push({
+          x, y: downsample,
+          name: `Tent ${tent}`,
+          mode: 'lines',
+          line: { width: 2 },
+        });
+      }
+      Plotly.newPlot("occupancy-chart", traces, {
+        title: "Occupancy Levels Over Time",
+        xaxis: {title:"Time"},
+        yaxis: {title:"Occupancy", rangemode:"tozero", range: [0, CONFIG.TENT_CAPACITY+40]},
+        legend: { orientation: "h" }
+      }, {responsive:true, displayModeBar:false});
+
+      // Entries/Exits Bar
+      let tentNames = [];
+      let entries = [];
+      let exits = [];
+      for (const tent of CONFIG.TENTS) {
+        let arr = data[tent];
+        let lunchIdx = (CONFIG.BREAK_TIMES.LUNCH.start-11)*60;
+        let lunchSlice = arr.slice(lunchIdx, lunchIdx+60);
+        let entryCount = lunchSlice.filter((v,i,arr)=>i>0 && v>arr[i-1]).length;
+        let exitCount = lunchSlice.filter((v,i,arr)=>i>0 && v<arr[i-1]).length;
+        tentNames.push(`Tent ${tent}`);
+        entries.push(entryCount);
+        exits.push(exitCount);
+      }
+      Plotly.newPlot("entries-exits-chart", [
+        {x: tentNames, y: entries, name: "Entries", type:"bar"},
+        {x: tentNames, y: exits, name: "Exits", type:"bar"},
+      ], {
+        barmode:"group",
+        title:"Entry and Exit Counts (Lunch)",
+        yaxis:{title:"Count"}
+      }, {responsive:true, displayModeBar:false});
+
+      // Heatmap: tents vs hours
+      let hours = [];
+      for (let h = 11; h <= 18; h++) hours.push(`${h}:00`);
+      let z = CONFIG.TENTS.map(tent => {
+        let arr = data[tent];
+        return hours.map((_,hi)=> {
+          return arr.slice(hi*60,(hi+1)*60).reduce((a,b)=>a+b,0)/60;
+        });
+      });
+      Plotly.newPlot("heatmap-chart", [{
+        z, x: hours, y: CONFIG.TENTS.map(t=>"Tent "+t), type:"heatmap",
+        colorscale: 'YlOrRd'
+      }], {
+        title:"Hourly Occupancy Heatmap",
+        xaxis:{title:"Hour"},
+        yaxis:{title:"Tent"},
+        height:400
+      }, {responsive:true, displayModeBar:false});
+    }
+
+    // ==========================================================================
+    // Insights & Recommendations based on metrics
+    // ==========================================================================
+    function updateInsights(kpis) {
+      // Observations
+      const obsList = document.getElementById("observations-list");
+      obsList.innerHTML = "";
+      const recList = document.getElementById("recommendations-list");
+      recList.innerHTML = "";
+
+      function obs(txt, sev) {
+        obsList.innerHTML += `<li class="severity-${sev}">
+            <span class="insight-icon"><i class="fas fa-circle"></i></span> ${txt}</li>`;
+      }
+      function rec(txt, sev) {
+        recList.innerHTML += `<li class="severity-${sev}">
+            <span class="insight-icon"><i class="fas fa-lightbulb"></i></span> ${txt}</li>`;
+      }
+      // Key observations
+      if (kpis.workTimeLost > CONFIG.SEVERITY_THRESHOLDS.HIGH.workTimeLost)
+        obs(`Significant work-time lost during breaks: ${kpis.workTimeLost} man-minutes`, "high");
+      else if (kpis.workTimeLost > CONFIG.SEVERITY_THRESHOLDS.MEDIUM.workTimeLost)
+        obs(`Moderate work-time lost: ${kpis.workTimeLost} man-minutes`, "medium");
+      else
+        obs(`Work-time lost within target`, "low");
+
+      if (kpis.peakUtil > CONFIG.SEVERITY_THRESHOLDS.HIGH.peakUtil)
+        obs(`Tent peak utilization exceeded safe capacity (${kpis.peakUtil}%)`, "high");
+      else if (kpis.peakUtil > CONFIG.SEVERITY_THRESHOLDS.MEDIUM.peakUtil)
+        obs(`Tent peak utilization approached limit (${kpis.peakUtil}%)`, "medium");
+      else
+        obs(`Tent peak utilization is within safe range (${kpis.peakUtil}%)`, "low");
+
+      if (kpis.flowStability > CONFIG.SEVERITY_THRESHOLDS.HIGH.flowCV)
+        obs(`High flow variability detected (CV: ${kpis.flowStability})`, "high");
+      else if (kpis.flowStability > CONFIG.SEVERITY_THRESHOLDS.MEDIUM.flowCV)
+        obs(`Moderate flow variability detected (CV: ${kpis.flowStability})`, "medium");
+      else
+        obs(`Occupancy flow is stable (CV: ${kpis.flowStability})`, "low");
+
+      if (kpis.capacityEvents > 0)
+        obs(`Capacity-hit events occurred: ${kpis.capacityEvents}`, "high");
+      else
+        obs(`No capacity-hit events.`, "low");
+
+      // Recommendations
+      if (kpis.workTimeLost > 100)
+        rec("Optimize break schedules to reduce work-time lost. Consider staggered break times.", "high");
+      if (kpis.peakUtil > 95)
+        rec("Increase tent capacity or better distribute workers across tents to avoid overcrowding.", "high");
+      if (kpis.flowStability > 0.6)
+        rec("Analyze entry/exit processes to smoothen worker flow and reduce bottlenecks.", "medium");
+      if (kpis.capacityEvents > 0)
+        rec("Monitor entry to tent and limit access when capacity is reached to prevent delays.", "high");
+      if (kpis.breakEfficiency < 90)
+        rec("Encourage timely return from breaks to boost break efficiency.", "medium");
+      rec("Regularly monitor the dashboard for improvement after implementing above changes.", "low");
+    }
+
+    // ==========================================================================
+    // Main UI/UX Logic
+    // ==========================================================================
+    let previousKPIs = null;
+
+    function updateDashboard(tent="all") {
+      // Simulate getting today's and yesterday's data
+      let todayData = generateOccupancyData(new Date(), tent);
+      let yesterdayData = generateOccupancyData(new Date(Date.now()-86400000), tent);
+
+      let kpis = calculateKPIs(todayData);
+      let prevKPIs = calculateKPIs(yesterdayData);
+      setKPI(kpis, prevKPIs);
+      drawCharts(todayData);
+      updateInsights(kpis);
+
+      previousKPIs = kpis;
+    }
+
+    // Controls
+    document.getElementById("tent-filter").addEventListener("change", (e) => {
+      updateDashboard(e.target.value);
+    });
+    document.getElementById("refresh-data").addEventListener("click", () => {
+      const tent = document.getElementById("tent-filter").value;
+      updateDashboard(tent);
+    });
+    // Optionally, auto-refresh:
+    // setInterval(()=>updateDashboard(document.getElementById("tent-filter").value), CONFIG.REFRESH_INTERVAL);
+
+    // On page load:
+    updateDashboard("all");
+  </script>
+</body>
+</html>
